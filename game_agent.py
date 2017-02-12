@@ -37,8 +37,26 @@ def custom_score(game, player):
         The heuristic value of the current game state to the specified player.
     """
 
+    if game.is_loser(player):
+        return float("-inf")
+
+    if game.is_winner(player):
+        return float("inf")
+
+    return custom_score_chase(game,player)
+
+def custom_score_open_moves(game, player):
     return float(len(game.get_legal_moves(player)))
 
+def custom_score_improved(game, player):
+    my_moves = len(game.get_legal_moves(player))
+    opponents_moves = len(game.get_legal_moves(game.get_opponent(player)))
+    return float(my_moves - opponents_moves)
+
+def custom_score_chase(game, player):
+    my_moves = len(game.get_legal_moves(player))
+    opponents_moves = len(game.get_legal_moves(game.get_opponent(player)))
+    return float(my_moves - 2 * opponents_moves)
 
 class CustomPlayer:
     """Game-playing agent that chooses a move using your evaluation function
