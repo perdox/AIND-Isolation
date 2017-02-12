@@ -128,7 +128,7 @@ class CustomPlayer:
         else: 
             return (-1, -1)
 
-        depth = 1
+        depth = self.search_depth
         first_iteration = True
 
         try:
@@ -144,9 +144,9 @@ class CustomPlayer:
                     depth = 5
                             
                 if self.method == 'minimax':
-                    best_move = self.minimax(game, depth)
+                    _, best_move = self.minimax(game, depth)
                 if self.method == 'alphabeta':
-                    best_move = self.alphabeta(game, depth)
+                    _, best_move = self.alphabeta(game, depth)
 
         except Timeout:
             # Handle any actions required at timeout, if necessary
@@ -188,6 +188,27 @@ class CustomPlayer:
         """
         if self.time_left() < self.TIMER_THRESHOLD:
             raise Timeout()
+
+        score = None
+        best_moves = None
+        legal_moves = game.get_legal_moves()
+
+        if depth == 0 or len(legal_moves) <= 0:
+            return self.score(game, self), (-1, -1)
+
+        for move in legal_moves:
+            game_forecast = game.forecast_move(move)
+            forecast_score, _ = self.minimax(game_forecast, depth-1, not maximizing_player)
+            
+            if score == None or ((maximizing_player and forecast_score>score) or (not maximizing_player and forecast_score<score)):
+                score = forecast_score
+                best_moves = [move]
+            elif forecast_score == score:
+                best_moves.append(move)
+
+        return score, random.choice(best_moves)
+
+
 
         # TODO: finish this function!
         raise NotImplementedError
