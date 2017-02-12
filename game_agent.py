@@ -43,17 +43,22 @@ def custom_score(game, player):
     if game.is_winner(player):
         return float("inf")
 
-    return custom_score_chase(game,player)
+    return custom_score_max_diff(game,player)
 
-def custom_score_open_moves(game, player):
+def custom_score_max_moves(game, player):
     return float(len(game.get_legal_moves(player)))
 
-def custom_score_improved(game, player):
+def custom_score_max_diff(game, player):
     my_moves = len(game.get_legal_moves(player))
     opponents_moves = len(game.get_legal_moves(game.get_opponent(player)))
     return float(my_moves - opponents_moves)
 
-def custom_score_chase(game, player):
+def custom_score_max_diff_own_pref(game, player):
+    my_moves = len(game.get_legal_moves(player))
+    opponents_moves = len(game.get_legal_moves(game.get_opponent(player)))
+    return float(2 * my_moves - opponents_moves)
+
+def custom_score_max_diff_opp_pref(game, player):
     my_moves = len(game.get_legal_moves(player))
     opponents_moves = len(game.get_legal_moves(game.get_opponent(player)))
     return float(my_moves - 2 * opponents_moves)
@@ -141,11 +146,14 @@ class CustomPlayer:
         # move from the game board (i.e., an opening book), or returning
         # immediately if there are no legal moves
 
-        if len(legal_moves)>0:
-            best_move = random.choice(legal_moves)
-        else: 
-            return (-1, -1)
+        if not legal_moves:
+            return (-1,-1)
+        if game.move_count == 0: 
+            return (game.height // 2, game.width // 2)
+        if game.move_count == 1: 
+            return (game.height // 2 - 1, game.width // 2)
 
+        best_move = random.choice(legal_moves)
         depth = self.search_depth
         first_iteration = True
 
@@ -156,6 +164,8 @@ class CustomPlayer:
             # when the timer gets close to expiring
             if self.iterative:
                 for box in range(game.width*game.height + 1):
+                    if self.time_left() < self.TIMER_THRESHOLD:
+                        return best_move
                     if self.method == 'minimax':
                         _, best_move = self.minimax(game, box+1)
                     if self.method == 'alphabeta':
@@ -168,7 +178,7 @@ class CustomPlayer:
 
         except Timeout:
             # Handle any actions required at timeout, if necessary
-            pass
+            return best_move
 
         # Return the best move from the last completed search iteration
         return best_move
