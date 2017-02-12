@@ -123,18 +123,24 @@ class CustomPlayer:
         # move from the game board (i.e., an opening book), or returning
         # immediately if there are no legal moves
 
-        best_move = random.choice(legal_moves)
+        if len(legal_moves)>0:
+            best_move = random.choice(legal_moves)
+        else: 
+            return (-1, -1)
+
         depth = 1
+        first_iteration = True
 
         try:
             # The search method call (alpha beta or minimax) should happen in
             # here in order to avoid timeout. The try/except block will
             # automatically catch the exception raised by the search method
             # when the timer gets close to expiring
-            while(len(legal_moves)>0):
+            while((first_iteration or self.iterative) and len(legal_moves)>0):
                 if self.iterative:
                     depth = depth+1
                 else: 
+                    first_iteration = False
                     depth = 5
                             
                 if self.method == 'minimax':
