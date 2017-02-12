@@ -136,13 +136,13 @@ class CustomPlayer:
             # here in order to avoid timeout. The try/except block will
             # automatically catch the exception raised by the search method
             # when the timer gets close to expiring
-            while((first_iteration or self.iterative) and len(legal_moves)>0):
-                if self.iterative:
-                    depth = depth+1
-                else: 
-                    first_iteration = False
-                    depth = 5
-                            
+            if self.iterative:
+                for box in range(game.width*game.height + 1):
+                    if self.method == 'minimax':
+                        _, best_move = self.minimax(game, box+1)
+                    if self.method == 'alphabeta':
+                        _, best_move = self.alphabeta(game, box+1)
+            else: 
                 if self.method == 'minimax':
                     _, best_move = self.minimax(game, depth)
                 if self.method == 'alphabeta':
@@ -208,11 +208,6 @@ class CustomPlayer:
 
         return score, random.choice(best_moves)
 
-
-
-        # TODO: finish this function!
-        raise NotImplementedError
-
     def alphabeta(self, game, depth, alpha=float("-inf"), beta=float("inf"), maximizing_player=True):
         """Implement minimax search with alpha-beta pruning as described in the
         lectures.
@@ -254,5 +249,40 @@ class CustomPlayer:
         if self.time_left() < self.TIMER_THRESHOLD:
             raise Timeout()
 
-        # TODO: finish this function!
-        raise NotImplementedError
+        score = None
+        best_moves = None
+        legal_moves = game.get_legal_moves()
+
+        if depth == 0 or len(legal_moves) <= 0:
+            return self.score(game, self), (-1, -1)
+
+        if maximizing_player:
+            score = float("-inf")
+            best_moves = [(-1,-1)]
+            for move in legal_moves:
+                game_forecast = game.forecast_move(move)
+                forecast_score, _ = self.alphabeta(game_forecast, depth-1, alpha, beta, not maximizing_player)
+                if forecast_score > score:
+                    best_moves = [move]
+                elif forecast_score == score:
+                    best_moves.append(move)
+                score = max(score, forecast_score)
+                alpha = max(alpha, score)
+                if beta <= alpha:
+                    break
+            return score, random.choice(best_moves)
+        else:
+            score = float("inf")
+            best_moves = [(-1,-1)]
+            for move in legal_moves:
+                game_forecast = game.forecast_move(move)
+                forecast_score, _ = self.alphabeta(game_forecast, depth-1, alpha, beta, not maximizing_player)
+                if forecast_score < score:
+                    best_moves = [move]
+                elif forecast_score == score:
+                    best_moves.append(move)
+                score = min(score, forecast_score)
+                beta = min(beta, score)
+                if beta <= alpha:
+                    break
+            return score, random.choice(best_moves)
