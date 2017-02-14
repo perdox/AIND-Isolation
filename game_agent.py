@@ -43,25 +43,55 @@ def custom_score(game, player):
     if game.is_winner(player):
         return float("inf")
 
-    return custom_score_max_diff(game,player)
+    return custom_score_center_diff_proximity(game, player)
 
-def custom_score_max_moves(game, player):
+
+def custom_score_my_moves(game, player):
     return float(len(game.get_legal_moves(player)))
 
-def custom_score_max_diff(game, player):
+
+def custom_score_diff(game, player):
     my_moves = len(game.get_legal_moves(player))
     opponents_moves = len(game.get_legal_moves(game.get_opponent(player)))
     return float(my_moves - opponents_moves)
 
-def custom_score_max_diff_own_pref(game, player):
+
+def custom_score_diff_opp_pref(game, player):
+    my_moves = len(game.get_legal_moves(player))
+    opponents_moves = len(game.get_legal_moves(game.get_opponent(player)))
+    return float(my_moves - 2 * opponents_moves)
+
+
+def custom_score_diff_own_pref(game, player):
     my_moves = len(game.get_legal_moves(player))
     opponents_moves = len(game.get_legal_moves(game.get_opponent(player)))
     return float(2 * my_moves - opponents_moves)
 
-def custom_score_max_diff_opp_pref(game, player):
+
+def custom_score_center_proximity(game, player):
+    center_width = game.width / 2.0
+    center_height = game.height / 2.0
+    current_location = game.get_player_location(player)
+
+    proximity_to_center = (abs(current_location[0] - center_height) +
+                           abs(current_location[1] - center_width))
+
+    return float(proximity_to_center)
+
+
+def custom_score_center_diff_proximity(game, player):
     my_moves = len(game.get_legal_moves(player))
     opponents_moves = len(game.get_legal_moves(game.get_opponent(player)))
-    return float(my_moves - 2 * opponents_moves)
+
+    center_width = game.width / 2.0
+    center_height = game.height / 2.0
+    current_location = game.get_player_location(player)
+
+    proximity_to_center = (abs(current_location[0] - center_height) +
+                           abs(current_location[1] - center_width))
+
+    return float(3 * my_moves - opponents_moves - 2 * proximity_to_center)
+
 
 class CustomPlayer:
     """Game-playing agent that chooses a move using your evaluation function
@@ -147,15 +177,14 @@ class CustomPlayer:
         # immediately if there are no legal moves
 
         if not legal_moves:
-            return (-1,-1)
-        if game.move_count == 0: 
+            return (-1, -1)
+        if game.move_count == 0:
             return (game.height // 2, game.width // 2)
-        if game.move_count == 1: 
+        if game.move_count == 1:
             return (game.height // 2 - 1, game.width // 2)
 
         best_move = random.choice(legal_moves)
         depth = self.search_depth
-        first_iteration = True
 
         try:
             # The search method call (alpha beta or minimax) should happen in
@@ -163,14 +192,14 @@ class CustomPlayer:
             # automatically catch the exception raised by the search method
             # when the timer gets close to expiring
             if self.iterative:
-                for box in range(game.width*game.height + 1):
+                for box in range(game.width * game.height + 1):
                     if self.time_left() < self.TIMER_THRESHOLD:
                         return best_move
                     if self.method == 'minimax':
-                        _, best_move = self.minimax(game, box+1)
+                        _, best_move = self.minimax(game, box + 1)
                     if self.method == 'alphabeta':
-                        _, best_move = self.alphabeta(game, box+1)
-            else: 
+                        _, best_move = self.alphabeta(game, box + 1)
+            else:
                 if self.method == 'minimax':
                     _, best_move = self.minimax(game, depth)
                 if self.method == 'alphabeta':
@@ -226,9 +255,11 @@ class CustomPlayer:
 
         for move in legal_moves:
             game_forecast = game.forecast_move(move)
-            forecast_score, _ = self.minimax(game_forecast, depth-1, not maximizing_player)
-            
-            if score == None or ((maximizing_player and forecast_score>score) or (not maximizing_player and forecast_score<score)):
+            forecast_score, _ = self.minimax(game_forecast,
+                                             depth - 1, not maximizing_player)
+            if (score is None or
+                ((maximizing_player and forecast_score > score) or
+                 (not maximizing_player and forecast_score < score))):
                 score = forecast_score
                 best_moves = [move]
             elif forecast_score == score:
@@ -236,7 +267,8 @@ class CustomPlayer:
 
         return score, random.choice(best_moves)
 
-    def alphabeta(self, game, depth, alpha=float("-inf"), beta=float("inf"), maximizing_player=True):
+    def alphabeta(self, game, depth, alpha=float("-inf"),
+                  beta=float("inf"), maximizing_player=True):
         """Implement minimax search with alpha-beta pruning as described in the
         lectures.
 
@@ -286,10 +318,12 @@ class CustomPlayer:
 
         if maximizing_player:
             score = float("-inf")
-            best_moves = [(-1,-1)]
+            best_moves = [(-1, -1)]
             for move in legal_moves:
                 game_forecast = game.forecast_move(move)
-                forecast_score, _ = self.alphabeta(game_forecast, depth-1, alpha, beta, not maximizing_player)
+                forecast_score, _ = self.alphabeta(game_forecast,
+                                                   depth - 1, alpha,
+                                                   beta, not maximizing_player)
                 if forecast_score > score:
                     best_moves = [move]
                 elif forecast_score == score:
@@ -301,10 +335,12 @@ class CustomPlayer:
             return score, random.choice(best_moves)
         else:
             score = float("inf")
-            best_moves = [(-1,-1)]
+            best_moves = [(-1, -1)]
             for move in legal_moves:
                 game_forecast = game.forecast_move(move)
-                forecast_score, _ = self.alphabeta(game_forecast, depth-1, alpha, beta, not maximizing_player)
+                forecast_score, _ = self.alphabeta(game_forecast,
+                                                   depth - 1, alpha,
+                                                   beta, not maximizing_player)
                 if forecast_score < score:
                     best_moves = [move]
                 elif forecast_score == score:
